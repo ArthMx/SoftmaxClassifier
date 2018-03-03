@@ -16,6 +16,7 @@ class SoftmaxClassifier(BaseEstimator):
         eta : learning rate
         alpha : l2 regularization paramater
         verbose : 0 not info printing / 1 last result for cost function / 2 printing cost function 10 times
+        early_stopping : stop training if cost function doesn't diminish anymore
         '''
         self.n_iters = n_iters
         self.eta = eta
@@ -25,13 +26,13 @@ class SoftmaxClassifier(BaseEstimator):
     
     def fit(self, X, y):
         '''
-        Input : - X     : (m , n+1)
-                - y     : (m, K)
+        Input : - X     : (m , n) matrix
+                - y     : (m, ) array of len = m and K possible values
         '''
         ti = time.time()
         t = 0
         X_b = self.add_bias(X)
-        y = y.astype(int)
+        y = y.reshape(-1,1).astype(int)
         y_one_hot = self.to_one_hot(y)
         
         m, n = X.shape
@@ -90,14 +91,14 @@ class SoftmaxClassifier(BaseEstimator):
     
     def predict(self, X):
         '''
-        input : X (m, n)
-        output : y (m, 1)
+        input : X (m, n) matrix, m instances, n features (no bias)
+        output : y (m, ) array of prediction
         '''
         X_b = self.add_bias(X)
         
         z = X_b.dot(self.theta)
         P = self.softmax_func(z)
-        best_k = np.argmax(P, axis = 1).reshape(-1,1)
+        best_k = np.argmax(P, axis = 1)
         
         return best_k
         
@@ -166,78 +167,3 @@ class SoftmaxClassifier(BaseEstimator):
         grad = (1/m) * X.T.dot(self.softmax_func(z) - y) + l2_reg
         
         return grad
-
-
-#X = np.load('datasets/MNIST/mnist_data.npy')
-#y = np.load('datasets/MNIST/mnist_label.npy').reshape(-1,1)
-#
-#from sklearn.preprocessing import StandardScaler
-#
-#X = StandardScaler().fit_transform(X)
-#
-#from sklearn.model_selection import train_test_split
-#
-#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-#
-#softmax_clf = SoftmaxClassifier(n_iters=100, eta=0.001, alpha=0.01, verbose=2)
-#
-#softmax_clf.fit(X_train, y_train)
-
-
-
-
-
-
-#def train_test_custom_split(X, y, frac_test=0.2):
-#    '''
-#    Split X and y to a train and test set
-#    output : X_train, X_test, y_train, y_test
-#    '''
-#    m = X.shape[0]
-#    
-#    rand_idx = np.random.permutation(m)
-#    limit = int(frac_test*(1-m))
-#    
-#    X_perm = X[rand_idx, :]
-#    y_perm = y[rand_idx, :]
-#    
-#    X_train, y_train = X_perm[0:limit] , y_perm[0:limit]
-#    X_test, y_test = X_perm[limit:] , y_perm[limit:]
-#    
-#    return X_train, X_test, y_train, y_test     
-
-
-
-
-#from sklearn import datasets
-#
-#iris = datasets.load_iris()
-#
-#X = iris['data'] # petal length, petal width
-#y = iris['target'].reshape(-1,1)
-#
-#m, n = X.shape
-#K = len(np.unique(y))
-#
-#X_train, X_test, y_train, y_test = train_test_custom_split(X, y, frac_test=0.4)
-#
-#softmax_clf = SoftmaxClassifier(n_iters=100000, verbose=2, eta=0.001, alpha=0.1, early_stopping=True)
-#
-#softmax_clf.fit(X_train, y_train)
-#
-#y_test_pred = softmax_clf.predict(X_test)
-#accuracy = (y_test_pred == y_test).mean()
-#print('accuracy : ', accuracy)
-#
-#from sklearn.pipeline import Pipeline
-#from sklearn.preprocessing import StandardScaler
-#
-#pipe_softmax = Pipeline([
-#        ('StandardScaler', StandardScaler()),
-#        ('softmax_clf', SoftmaxClassifier(n_iters=100000, verbose=2, eta=0.001, alpha=0.1, early_stopping=True))
-#        ])
-#    
-#pipe_softmax.fit(X_test, y_test)
-#y_test_pred = pipe_softmax.predict(X_test)
-#accuracy = (y_test_pred == y_test).mean()
-#print('accuracy : ', accuracy)
